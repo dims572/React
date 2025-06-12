@@ -10,6 +10,7 @@ export default function Header() {
     const path = location.pathname;
     if (path === "/") setCurrentPage("home");
     else if (path === "/book") setCurrentPage("book");
+    else if (path === "/admin") setCurrentPage("admin");
     else if (path === "/team") setCurrentPage("team");
     else if (path === "/contact") setCurrentPage("contact");
   }, [location.pathname]);
@@ -45,6 +46,14 @@ export default function Header() {
           </Link>
         </li>
         <li>
+        <Link
+      to="/admin"
+      className={`nav-link px-3 ${
+        currentPage === "admin" ? "fw-bold text-primary" : ""
+      } transition-all hover:text-primary-600`}
+    >
+      Admin
+    </Link>
           <Link
             to="/team"
             className={`nav-link px-3 ${
