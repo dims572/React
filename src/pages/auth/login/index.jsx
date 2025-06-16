@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../../contexts/AuthContext';
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { login, isAuthenticated } = useAuth();
+  
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -15,20 +18,38 @@ export default function Login() {
   const [loginError, setLoginError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Check for success message from registration
+  useEffect(() => {
+    if (isAuthenticated()) {
+      const from = location.state?.from?.pathname || '/';
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, location]);
+
   useEffect(() => {
     if (location.state?.message) {
       setSuccessMessage(location.state.message);
       if (location.state?.email) {
         setFormData(prev => ({ ...prev, email: location.state.email }));
       }
-      // Clear the state to prevent showing message on refresh
       window.history.replaceState({}, document.title);
     }
   }, [location]);
 
-  // Dummy user data (in real app, this would come from backend)
   const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+
+  useEffect(() => {
+    const adminExists = registeredUsers.some(user => user.email === 'admin@bookstore.com');
+    if (!adminExists) {
+      const demoAdmin = {
+        email: 'admin@bookstore.com',
+        password: 'admin123',
+        fullName: 'Administrator',
+        username: 'admin'
+      };
+      const updatedUsers = [...registeredUsers, demoAdmin];
+      localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
+    }
+  }, []);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -73,7 +94,6 @@ export default function Login() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -83,23 +103,25 @@ export default function Login() {
     setLoginError('');
 
     try {
-      // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Check if user exists in registered users
-      const user = registeredUsers.find(u => 
+      const currentUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+      
+      const user = currentUsers.find(u => 
         u.email === formData.email && u.password === formData.password
       );
 
       if (user) {
         // Login successful
-        // Store user session
-        localStorage.setItem('currentUser', JSON.stringify({
+        login({
           email: user.email,
           fullName: user.fullName,
           username: user.username,
           loginTime: new Date().toISOString()
-        }));
+        });
+
+        const from = location.state?.from?.pathname || '/';
+        navigate(from, { replace: true });
       } else {
         // Login failed
         setLoginError('Email atau password salah. Silakan coba lagi.');
@@ -113,7 +135,6 @@ export default function Login() {
     }
   };
 
-  // Handle third-party login (placeholder)
   const handleThirdPartyLogin = (provider) => {
     alert(`${provider} login will be implemented soon!`);
   };
@@ -128,8 +149,15 @@ export default function Login() {
             </div>
 
             <div className="modal-body p-5 pt-0">
+              <div className="alert alert-info mb-4">
+                <strong>Demo Accounts:</strong><br/>
+                <small>
+                  <strong>Admin:</strong> admin@bookstore.com / admin123 <br/>
+                  <strong>User:</strong> Register atau gunakan akun yang sudah dibuat
+                </small>
+              </div>
+
               <form onSubmit={handleSubmit}>
-                {/* Success Message Alert */}
                 {successMessage && (
                   <div className="alert alert-success d-flex align-items-center mb-3" role="alert">
                     <span className="me-2">✅</span>
@@ -137,7 +165,6 @@ export default function Login() {
                   </div>
                 )}
 
-                {/* Login Error Alert */}
                 {loginError && (
                   <div className="alert alert-danger d-flex align-items-center mb-3" role="alert">
                     <span className="me-2">⚠️</span>
@@ -145,7 +172,6 @@ export default function Login() {
                   </div>
                 )}
 
-                {/* Email Input */}
                 <div className="form-floating mb-3">
                   <input 
                     type="email" 
@@ -165,7 +191,6 @@ export default function Login() {
                   )}
                 </div>
 
-                {/* Password Input */}
                 <div className="form-floating mb-3 position-relative">
                   <input 
                     type={showPassword ? 'text' : 'password'}
@@ -195,7 +220,6 @@ export default function Login() {
                   )}
                 </div>
 
-                {/* Remember Me & Forgot Password */}
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <div className="form-check">
                     <input className="form-check-input" type="checkbox" id="rememberMe" />
@@ -208,7 +232,6 @@ export default function Login() {
                   </Link>
                 </div>
 
-                {/* Login Button */}
                 <button 
                   className="w-100 mb-2 btn btn-lg rounded-3 btn-primary" 
                   type="submit"
@@ -226,7 +249,6 @@ export default function Login() {
 
                 <hr className="my-4"/>
                 
-                {/* Third Party Login */}
                 <h2 className="fs-5 fw-bold mb-3">Or use a third-party</h2>
                 
                 <button 
